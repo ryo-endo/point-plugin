@@ -318,6 +318,8 @@ class  AdminOrder extends AbstractWorkPlace
 
         dump('5');
 
+        dump($this->targetOrder->getOrderStatus()->getId());
+        dump($this->pointInfo->getPlgAddPointStatus());
         // 以下受注画面内、イベント処理
         // 受注ステータス判定→ポイント確定処理
         if ($this->targetOrder->getOrderStatus()->getId() == $this->pointInfo->getPlgAddPointStatus()) {
