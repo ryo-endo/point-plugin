@@ -39,14 +39,15 @@ class PointRepositoryScenarioTest extends AbstractWebTestCase
     public function testShoppingCompleteWithPointFix()
     {
         // 注文する
-        $order = $this->DoOrder($this->createCustomer());
+        $customer = $this->createCustomer();
+        $order = $this->DoOrder($customer);
 
         // 期待結果の計算
         $expectedPoint = $this->CalcExpectedPoint($order);
 
         // 検証
-        $this->assertEquals($expectedPoint, $this->getCurrentPoint());
-        $this->assertEquals(0, $this->getProvisionalPoint());
+        $this->assertEquals($expectedPoint, $this->getCurrentPoint($customer));
+        $this->assertEquals(0, $this->getProvisionalPoint($customer));
     }
 
     // 購入（仮ポイント）
@@ -56,14 +57,15 @@ class PointRepositoryScenarioTest extends AbstractWebTestCase
         $this->updatePointSettings($this->pointFixStatus);
 
         // 注文する
-        $order = $this->DoOrder($this->createCustomer());
+        $customer = $this->createCustomer();
+        $order = $this->DoOrder($customer);
 
         // 期待結果の計算
         $expectedPoint = $this->CalcExpectedPoint($order);
 
         // 検証
-        $this->assertEquals(0, $this->getCurrentPoint());
-        $this->assertEquals($expectedPoint, $this->getProvisionalPoint());
+        $this->assertEquals(0, $this->getCurrentPoint($customer));
+        $this->assertEquals($expectedPoint, $this->getProvisionalPoint($customer));
     }
 
     // 受注変更（確定ステータスへの変更）
@@ -80,15 +82,15 @@ class PointRepositoryScenarioTest extends AbstractWebTestCase
         $expectedPoint = $this->CalcExpectedPoint($order);
 
         // 検証（仮ポイントであること）
-        $this->assertEquals(0, $this->getCurrentPoint());
-        $this->assertEquals($expectedPoint, $this->getProvisionalPoint());
+        $this->assertEquals(0, $this->getCurrentPoint($customer));
+        $this->assertEquals($expectedPoint, $this->getProvisionalPoint($customer));
 
         // ポイント確定する
         $this->ChangeOrderToFixStatus($this->pointFixStatus, $order, $customer);
 
         // 検証（確定していること）
-        $this->assertEquals($expectedPoint, $this->getCurrentPoint());
-        $this->assertEquals(0, $this->getProvisionalPoint());
+        $this->assertEquals($expectedPoint, $this->getCurrentPoint($customer));
+        $this->assertEquals(0, $this->getProvisionalPoint($customer));
     }
 
     // 受注変更（未確定ステータスへの変更）
@@ -105,16 +107,16 @@ class PointRepositoryScenarioTest extends AbstractWebTestCase
         $expectedPoint = $this->CalcExpectedPoint($order);
 
         // 検証（仮ポイントであること）
-        $this->assertEquals(0, $this->getCurrentPoint());
-        $this->assertEquals($expectedPoint, $this->getProvisionalPoint());
+        $this->assertEquals(0, $this->getCurrentPoint($customer));
+        $this->assertEquals($expectedPoint, $this->getProvisionalPoint($customer));
 
         // ポイント確定する
         $unfixedStatus = (int)$this->app['config']['order_processing'];
         $this->ChangeOrderToFixStatus($unfixedStatus, $order, $customer);
 
         // 検証（仮ポイントのままであること）
-        $this->assertEquals(0, $this->getCurrentPoint());
-        $this->assertEquals($expectedPoint, $this->getProvisionalPoint());
+        $this->assertEquals(0, $this->getCurrentPoint($customer));
+        $this->assertEquals($expectedPoint, $this->getProvisionalPoint($customer));
     }
 
     // 受注削除（確定ポイントを削除）
@@ -130,15 +132,15 @@ class PointRepositoryScenarioTest extends AbstractWebTestCase
         $expectedPoint = $this->CalcExpectedPoint($order);
 
         // 検証（確定ポイントであること）
-        $this->assertEquals($expectedPoint, $this->getCurrentPoint());
-        $this->assertEquals(0, $this->getProvisionalPoint());
+        $this->assertEquals($expectedPoint, $this->getCurrentPoint($customer));
+        $this->assertEquals(0, $this->getProvisionalPoint($customer));
 
         // 受注の削除
         $this->deleteOrder($order);
 
         // 検証（ポイント無くなっていること）
-        $this->assertEquals(0, $this->getCurrentPoint());
-        $this->assertEquals(0, $this->getProvisionalPoint());
+        $this->assertEquals(0, $this->getCurrentPoint($customer));
+        $this->assertEquals(0, $this->getProvisionalPoint($customer));
     }
 
     // 受注削除（仮ポイントを削除）
@@ -157,15 +159,15 @@ class PointRepositoryScenarioTest extends AbstractWebTestCase
         $expectedPoint = $this->CalcExpectedPoint($order);
 
         // 検証（仮ポイントであること）
-        $this->assertEquals(0, $this->getCurrentPoint());
-        $this->assertEquals($expectedPoint, $this->getProvisionalPoint());
+        $this->assertEquals(0, $this->getCurrentPoint($customer));
+        $this->assertEquals($expectedPoint, $this->getProvisionalPoint($customer));
 
         // 受注の削除
         $this->deleteOrder($order);
 
         // 検証（ポイント無くなっていること）
-        $this->assertEquals(0, $this->getCurrentPoint());
-        $this->assertEquals(0, $this->getProvisionalPoint());
+        $this->assertEquals(0, $this->getCurrentPoint($customer));
+        $this->assertEquals(0, $this->getProvisionalPoint($customer));
     }
 
 
@@ -188,22 +190,29 @@ class PointRepositoryScenarioTest extends AbstractWebTestCase
      * 仮ポイントの取得
      * @return int
      */
-    private function getProvisionalPoint()
+    private function getProvisionalPoint($customer)
     {
         /** @var PointCalculateHelper $calculator */
         $calculator = $this->app['eccube.plugin.point.calculate.helper.factory'];
+        $calculator->addEntity('Customer', $customer);
         return $calculator->getProvisionalAddPoint();
     }
 
     /**
      * 確定ポイントの取得
+     * @param Customer $customer
      * @return int
      */
-    private function getCurrentPoint()
+    private function getCurrentPoint($customer)
     {
-        /** @var PointCalculateHelper $calculator */
-        $calculator = $this->app['eccube.plugin.point.calculate.helper.factory'];
-        return $calculator->getPoint();
+        $orderIds = $this->app['eccube.plugin.point.repository.pointstatus']->selectOrderIdsWithFixedByCustomer(
+            $customer->getId()
+        );
+        $currentPoint = $this->app['eccube.plugin.point.repository.point']->calcCurrentPoint(
+            $customer->getId(),
+            $orderIds
+        );
+        return $currentPoint;
     }
 
     /**
