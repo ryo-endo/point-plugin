@@ -261,13 +261,18 @@ class  AdminOrder extends AbstractWorkPlace
         // 必要情報をセット
         $this->targetOrder = $event->getArgument('TargetOrder');
 
+        dump($this->targetOrder);
         if (empty($this->targetOrder)) {
             return false;
         }
+        dump('1');
 
+
+        dump($event->hasArgument('form'));
         if (!$event->hasArgument('form')) {
             return false;
         }
+        dump('2');
 
         if ($event->getArgument('form')->has('plg_use_point')) {
             $this->usePoint = $event->getArgument('form')->get('plg_use_point')->getData();
@@ -278,11 +283,18 @@ class  AdminOrder extends AbstractWorkPlace
             $this->usePoint = 0;
         }
 
+        dump('3');
+
         // 会員情報取得
         $this->customer = $event->getArgument('Customer');
+
+
+        dump($this->customer);
         if (empty($this->customer)) {
             return false;
         }
+
+        dump('4');
 
         // アップデート処理判定( 受注画面で購入商品構成に変更があった場合 )
         if (!empty($this->targetOrder) && !empty($this->customer)) {
@@ -303,6 +315,8 @@ class  AdminOrder extends AbstractWorkPlace
                 }
             }
         }
+
+        dump('5');
 
         // 以下受注画面内、イベント処理
         // 受注ステータス判定→ポイント確定処理
