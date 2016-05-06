@@ -1,5 +1,13 @@
 <?php
-
+/*
+* This file is part of EC-CUBE
+*
+* Copyright(c) 2000-2016 LOCKON CO.,LTD. All Rights Reserved.
+* http://www.lockon.co.jp/
+*
+* For the full copyright and license information, please view the LICENSE
+* file that was distributed with this source code.
+*/
 namespace Eccube\Tests\Repository;
 
 use Eccube\Application;
@@ -205,6 +213,24 @@ class PointRepositoryTest extends EccubeTestCase
             $orderIds
         );
         $this->expected = self::POINT_VALUE;
+        $this->actual = $sumPoint;
+        $this->verify();
+    }
+
+    public function testCalcCurrentPointWithManualPointOnly()
+    {
+        $customer = $this->createCustomer();
+        $orderIds = array();
+
+        // 準備：保有ポイント手動変更の履歴のみを追加
+        $this->createManualPoint($customer);
+
+        // 検証：現在の保有ポイントの計算
+        $sumPoint = $this->app['eccube.plugin.point.repository.point']->calcCurrentPoint(
+            $customer->getId(),
+            $orderIds
+        );
+        $this->expected = self::POINT_MANUAL_VALUE;
         $this->actual = $sumPoint;
         $this->verify();
     }
