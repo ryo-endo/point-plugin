@@ -308,6 +308,7 @@ class PointRepositoryJoinTest extends AbstractWebTestCase
         $event = new EventArgs(
             array(
                 'builder' => $builder,
+                'OriginOrder' => $order,
                 'TargetOrder' => $order,
             ),
             null
@@ -342,6 +343,7 @@ class PointRepositoryJoinTest extends AbstractWebTestCase
         $event = new EventArgs(
             array(
                 'builder' => $builder,
+                'OriginOrder' => $order,
                 'TargetOrder' => $order,
             ),
             null
